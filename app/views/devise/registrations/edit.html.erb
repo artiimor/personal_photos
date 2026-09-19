@@ -5,7 +5,7 @@
     <div class="mb-4">
       <%= f.label :email, class: "mb-1 block text-sm font-medium text-gray-700" %>
       <%= f.email_field :email, autofocus: true, autocomplete: "email",
-            class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500" %>
+            class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600" %>
     </div>
 
     <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
@@ -21,24 +21,24 @@
         <% if @minimum_password_length %> (<%= @minimum_password_length %> characters minimum)<% end %>
       </p>
       <%= f.password_field :password, autocomplete: "new-password",
-            class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500" %>
+            class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600" %>
     </div>
 
     <div class="mb-4">
       <%= f.label :password_confirmation, class: "mb-1 block text-sm font-medium text-gray-700" %>
       <%= f.password_field :password_confirmation, autocomplete: "new-password",
-            class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500" %>
+            class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600" %>
     </div>
 
     <div class="mb-6">
       <%= f.label :current_password, class: "mb-1 block text-sm font-medium text-gray-700" %>
       <p class="mb-1 text-xs text-gray-500">We need your current password to confirm your changes</p>
       <%= f.password_field :current_password, autocomplete: "current-password",
-            class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500" %>
+            class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-600" %>
     </div>
 
     <div>
-      <%= f.submit "Update", class: "w-full cursor-pointer rounded-lg bg-green-600 px-4 py-2 font-medium text-white transition hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2" %>
+      <%= f.submit "Update", class: "w-full cursor-pointer rounded-lg bg-green-700 px-4 py-2 font-medium text-white transition hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2" %>
     </div>
   <% end %>
 

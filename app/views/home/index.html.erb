@@ -1,6 +1,9 @@
-<div>
-  <h1 class="font-bold text-4xl">Home#index</h1>
-  <p>Find me in app/views/home/index.html.erb</p>
-  <h1>Hola <%= current_user.email %></h1>
-  <%= button_to "Salir", destroy_user_session_path, method: :delete %>
+<div class="flex w-full justify-center py-12">
+  <div class="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
+    <h1 class="mb-2 text-2xl font-semibold text-gray-900">Hola, <%= current_user.email %></h1>
+    <p class="mb-6 text-sm text-gray-500">Personal Photos</p>
+
+    <%= button_to "Salir", destroy_user_session_path, method: :delete,
+          class: "w-full cursor-pointer rounded-lg bg-green-700 px-4 py-2 font-medium text-white transition hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2" %>
+  </div>
 </div>
