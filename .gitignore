@@ -40,3 +40,5 @@
 
 # Not using Kamal for deploys.
 /.kamal
+
+/graphify-out/
