@@ -8,7 +8,7 @@ gem "importmap-rails"
 gem "turbo-rails"
 gem "stimulus-rails"
 gem "jbuilder"
-gem "json", "~> 2.21" # json 3.x broke JSON.parse(source, options) used by ActiveSupport
+gem "json", "~> 3.0" # json 3.x broke JSON.parse(source, options) used by ActiveSupport
 
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 # gem "bcrypt", "~> 3.1.7"
