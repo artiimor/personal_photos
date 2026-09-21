@@ -60,3 +60,5 @@ gem "sidekiq", "~> 8.1"
 gem "redis", "~> 6.0"
 
 gem "foreman", "~> 0.90.0"
+
+gem "httparty", "~> 0.24.2"

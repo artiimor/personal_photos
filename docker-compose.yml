@@ -24,9 +24,12 @@ services:
       - .:/rails
     ports:
       - "3000:3000"
+    env_file: .env
     environment:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - db
       - redis
@@ -38,6 +41,7 @@ services:
     command: bin/rails tailwindcss:watch
     volumes:
       - .:/rails
+    env_file: .env
 
   sidekiq:
     build:
@@ -46,9 +50,12 @@ services:
     command: bundle exec sidekiq
     volumes:
       - .:/rails
+    env_file: .env
     environment:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - db
       - redis
