@@ -50,6 +50,7 @@ group :development, :test do
 
   gem "rspec-rails"
   gem "shoulda-matchers"
+  gem "jwt"
 end
 
 group :development do
