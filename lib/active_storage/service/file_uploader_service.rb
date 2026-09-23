@@ -1,8 +1,11 @@
 class FileUploaderService < ActiveStorage::Service
+  # TODO add error handling
+
   include HTTParty
 
+  base_uri ENV.fetch("FILE_UPLOADER_URL")
+
   def upload(key, io, checksum: nil, **)
-    # POST/PUT file to my server need to obtain the user_id
     request("put",
             "files/#{Current.user_id}",
             { query: { token: jwt_token("upload") },
@@ -10,17 +13,17 @@ class FileUploaderService < ActiveStorage::Service
   end
 
   def download(key, &block)
-    # GET file from my server
     request("get",
             "files/#{Current.user_id}/#{key}",
             { query: { token: jwt_token("download") } })
   end
 
   def exist?(key)
+    True # TODO implement method in server first
   end
 
   def delete(key)
-    request("delete",
+    bearer_request("delete",
             "files/#{Current.user_id}/#{key}")
   end
 
@@ -29,10 +32,11 @@ class FileUploaderService < ActiveStorage::Service
   end
 
   def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, **)
-    # la URL a la que el navegador sube directo (subida directa)
+    request(:get, "/upload_url/#{Current.user_id}")
   end
 
   def headers_for_direct_upload(key, content_type:, **)
+    {}
   end
 
   private
@@ -55,9 +59,11 @@ class FileUploaderService < ActiveStorage::Service
     }
   end
 
-  def request(method, path, options = {})
-    self.class.send(method, path, options.merge(headers: auth_headers)) if method == "/delete"
+  def bearer_request(method, path, options = {})
+    self.class.send(method, path, options.merge(headers: auth_headers))
+  end
 
+  def request
     self.class.send(method, path, options)
   end
 end
