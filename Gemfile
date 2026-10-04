@@ -66,4 +66,4 @@ gem "redis", "~> 6.0"
 
 gem "foreman", "~> 0.90.0"
 
-gem "httparty", "~> 0.24.2"
+gem "httparty", "~> 0.24.3"
