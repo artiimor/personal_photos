@@ -1,6 +1,4 @@
 class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
-  # TODO add error handling
-
   include HTTParty
 
   base_uri ENV.fetch("FILE_UPLOADER_URL")
