@@ -68,6 +68,17 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   end
 
   def request(method, path, options = {})
-    self.class.send(method, path, options)
+    response = self.class.send(method, path, options)
+    handle_response(response)
+  end
+
+  def handle_response(response)
+    case response.code.to_i
+    when 200..299 then response
+    when 404      then raise ActiveStorage::FileNotFoundError, key
+    when 422      then raise ActiveStorage::IntegrityError
+    when 401, 403 then raise ActiveStorage::Error, "JWT rejected for #{key} (#{response.code})"
+    else               raise ServerError, "File server #{response.code} para #{key}"
+    end
   end
 end
