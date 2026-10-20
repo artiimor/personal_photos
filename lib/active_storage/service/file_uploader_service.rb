@@ -8,14 +8,14 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   def upload(key, io, checksum: nil, **)
     owner_id = user_id_from_key(key)
     request("put",
-            "files/#{owner_id}",
+            "/files/#{owner_id}",
             { query: { token: jwt_token(owner_id, "upload") },
               body: { file: io } })
   end
 
   def download(key, &block)
     request("get",
-            "files/#{key}",
+            "/files/#{key}",
             { query: { token: jwt_token(user_id_from_key(key), "download") } })
   end
 
