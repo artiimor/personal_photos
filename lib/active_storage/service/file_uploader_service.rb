@@ -25,7 +25,7 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
 
   def delete(key)
     bearer_request("delete",
-            "files/#{key}")
+            "/files/#{key}")
   end
 
   def url(key, **options)
@@ -64,7 +64,8 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   end
 
   def bearer_request(method, path, options = {})
-    self.class.send(method, path, options.merge(headers: auth_headers))
+    response = self.class.send(method, path, options.merge(headers: auth_headers))
+    handle_response(response)
   end
 
   def request(method, path, options = {})
@@ -75,10 +76,10 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   def handle_response(response)
     case response.code.to_i
     when 200..299 then response
-    when 404      then raise ActiveStorage::FileNotFoundError, key
+    when 404      then raise ActiveStorage::FileNotFoundError
     when 422      then raise ActiveStorage::IntegrityError
-    when 401, 403 then raise ActiveStorage::Error, "JWT rejected for #{key} (#{response.code})"
-    else               raise ServerError, "File server #{response.code} para #{key}"
+    when 401, 403 then raise ActiveStorage::Error, "JWT rejected (#{response.code})"
+    else               raise ActiveStorage::Error, "File server #{response.code}"
     end
   end
 end
