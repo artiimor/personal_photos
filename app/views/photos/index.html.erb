@@ -1,0 +1,18 @@
+<div class="flex w-full justify-center py-12">
+  <div class="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
+    <h1 class="mb-6 text-2xl font-semibold text-gray-900">Tus fotos</h1>
+
+    <% if @photos.any? %>
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <% @photos.each do |photo| %>
+          <div class="overflow-hidden rounded-lg ring-1 ring-gray-200">
+            <img src="<%= photo.path %>" alt="<%= photo.name %>" class="h-32 w-full object-cover">
+            <p class="truncate px-2 py-1 text-sm text-gray-700"><%= photo.name %></p>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-sm text-gray-500">Aún no se han subido fotos.</p>
+    <% end %>
+  </div>
+</div>
