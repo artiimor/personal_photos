@@ -1,6 +1,6 @@
 <div class="flex w-full justify-center py-12">
   <div class="w-full max-w-2xl rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
-    <h1 class="mb-6 text-2xl font-semibold text-gray-900">Tus fotos</h1>
+    <h1 class="mb-6 text-2xl font-semibold text-gray-900"><%= t(".title") %></h1>
 
     <% if @photos.any? %>
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -12,7 +12,7 @@
         <% end %>
       </div>
     <% else %>
-      <p class="text-sm text-gray-500">Aún no se han subido fotos.</p>
+      <p class="text-sm text-gray-500"><%= t(".empty") %></p>
     <% end %>
   </div>
 </div>

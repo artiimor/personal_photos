@@ -29,3 +29,17 @@
 
 en:
   hello: "Hello world"
+  home:
+    index:
+      greeting: "Hello, %{email}"
+      sign_out: "Sign out"
+  photos:
+    index:
+      title: "Your photos"
+      empty: "No photos have been uploaded yet."
+    new:
+      title: "Upload photo"
+      submit: "Upload"
+    create:
+      success: "Photo uploaded successfully."
+      failure: "Could not upload the photo: %{error}"
