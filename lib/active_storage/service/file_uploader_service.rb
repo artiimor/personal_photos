@@ -5,19 +5,21 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
 
   def upload(key, io, checksum: nil, content_type: nil, **)
     owner_id = user_id_from_key(key)
-    filename = synthetic_filename(key, content_type)
-    io.define_singleton_method(:original_filename) { filename }
+    file_name = synthetic_filename(key, content_type)
+    io.define_singleton_method(:original_filename) { file_name }
 
     request("put",
             "/files/#{owner_id}",
-            { query: { token: jwt_token(owner_id, "upload") },
+            { query: { token: jwt_token(owner_id, "upload", nil) },
               body: { file: io } })
   end
 
   def download(key, &block)
+    file_name = synthetic_filename(key, ActiveStorage::Blob.find_by(key: key)&.content_type)
+
     response = request("get",
                         path_with_filename(key),
-                        { query: { token: jwt_token(user_id_from_key(key), "download") } })
+                        { query: { token: jwt_token(user_id_from_key(key), "download", file_name) } })
     block_given? ? yield(response.body) : response.body
   end
 
@@ -33,8 +35,8 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   # (e.g. host.docker.internal inside the app container), but that host is only resolvable
   # from inside the container, not from the end user's browser following the redirect.
   def url(key, content_type: nil, **options)
-    filename = synthetic_filename(key, content_type)
-    "#{public_base_uri}/files/#{key}/#{filename}?token=#{jwt_token(user_id_from_key(key), "download")}"
+    file_name = synthetic_filename(key, content_type)
+    "#{public_base_uri}/files/#{key}/#{file_name}?token=#{jwt_token(user_id_from_key(key), "download", file_name)}"
   end
 
   def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, **)
@@ -70,16 +72,17 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
     "#{basename}.#{ext}"
   end
 
-  def jwt_token(user_id, scope)
+  def jwt_token(user_id, scope, file_name)
     secret = ENV.fetch("FILE_UPLOADER_JWT_TOKEN")
-    JWT.encode(jwt_claims(user_id, scope), secret, "HS256")
+    JWT.encode(jwt_claims(user_id, scope, file_name), secret, "HS256")
   end
 
-  def jwt_claims(user_id, scope)
+  def jwt_claims(user_id, scope, file_name)
     {
       sub: user_id,
       exp: (Time.now + 5 * 60).to_i,
-      scope: scope
+      scope: scope,
+      file_name: file_name
     }
   end
 
