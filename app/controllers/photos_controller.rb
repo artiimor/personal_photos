@@ -12,7 +12,6 @@ class PhotosController < ApplicationController
   def create
     uploaded_file = photo_params[:file]
     key = "#{current_user.uid}/#{SecureRandom.uuid}"
-    service = ActiveStorage::Service::FileUploaderService.new
 
     @photo = current_user.photos.new(
       name: uploaded_file.original_filename,
@@ -22,13 +21,14 @@ class PhotosController < ApplicationController
 
     ActiveRecord::Base.transaction do
       @photo.save!
-      service.upload(key, uploaded_file)
+      @photo.image.attach(uploaded_file)
     end
 
     redirect_to photos_path, notice: t("photos.create.success")
   rescue ActiveRecord::RecordInvalid
     render :new, status: :unprocessable_entity
   rescue ActiveStorage::Error => e
+    Rails.logger.error("[PhotosController#create] upload failed: #{e.class} - #{e.message}")
     @photo.errors.add(:base, t("photos.create.failure", error: e.message))
     render :new, status: :unprocessable_entity
   end
