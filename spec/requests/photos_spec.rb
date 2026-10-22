@@ -27,7 +27,13 @@ RSpec.describe "Photos", type: :request do
       end
 
       context "with photos" do
-        let!(:photo) { Photo.create!(name: "beach", path: "/photos/beach.jpg", file_type: "jpg", user: user) }
+        before { allow_any_instance_of(ActiveStorage::Service::FileUploaderService).to receive(:upload) }
+
+        let!(:photo) do
+          Photo.create!(name: "beach", path: "/photos/beach.jpg", file_type: "jpg", user: user).tap do |photo|
+            photo.image.attach(fixture_file_upload("test_photo.jpg", "image/jpeg"))
+          end
+        end
 
         it "lists the user's photos" do
           get photos_path
@@ -69,14 +75,11 @@ RSpec.describe "Photos", type: :request do
       end
 
       it "uploads the file under a key scoped to the user" do
-        service = instance_double(ActiveStorage::Service::FileUploaderService)
-        allow(ActiveStorage::Service::FileUploaderService).to receive(:new).and_return(service)
-        allow(service).to receive(:upload)
+        expect_any_instance_of(ActiveStorage::Service::FileUploaderService)
+          .to receive(:upload)
+          .with(a_string_starting_with("#{user.uid}/"), an_instance_of(File), hash_including(content_type: "image/jpeg"))
 
         post photos_path, params: { photo: { file: file } }
-
-        expect(service).to have_received(:upload)
-          .with(a_string_starting_with("#{user.uid}/"), an_instance_of(ActionDispatch::Http::UploadedFile))
       end
     end
 

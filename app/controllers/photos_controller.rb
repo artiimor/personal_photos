@@ -21,7 +21,12 @@ class PhotosController < ApplicationController
 
     ActiveRecord::Base.transaction do
       @photo.save!
-      @photo.image.attach(uploaded_file)
+      @photo.image.attach(
+        key: key,
+        io: uploaded_file.open,
+        filename: uploaded_file.original_filename,
+        content_type: uploaded_file.content_type
+      )
     end
 
     redirect_to photos_path, notice: t("photos.create.success")
@@ -29,6 +34,7 @@ class PhotosController < ApplicationController
     render :new, status: :unprocessable_entity
   rescue ActiveStorage::Error => e
     Rails.logger.error("[PhotosController#create] upload failed: #{e.class} - #{e.message}")
+    @photo.destroy
     @photo.errors.add(:base, t("photos.create.failure", error: e.message))
     render :new, status: :unprocessable_entity
   end

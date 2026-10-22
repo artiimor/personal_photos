@@ -24,7 +24,7 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
   describe "#jwt_token" do
     it "encodes a token with the given sub, scope and a 5 minute expiry" do
       before_exp = 5.minutes.from_now.to_i
-      token = service.send(:jwt_token, owner_id, "download")
+      token = service.send(:jwt_token, owner_id, "download", "abc123.jpeg")
       after_exp = 5.minutes.from_now.to_i
       claims = decoded_claims(token)
 
