@@ -34,7 +34,6 @@ class PhotosController < ApplicationController
     render :new, status: :unprocessable_entity
   rescue ActiveStorage::Error => e
     Rails.logger.error("[PhotosController#create] upload failed: #{e.class} - #{e.message}")
-    @photo.destroy
     @photo.errors.add(:base, t("photos.create.failure", error: e.message))
     render :new, status: :unprocessable_entity
   end

@@ -14,6 +14,7 @@
       <div class="relative mb-6 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 px-6 py-10 text-center transition"
            data-controller="drag-drop">
         <%= f.file_field :file, accept: "image/*", required: true,
+              direct_upload: true,
               data: {
                 drag_drop_target: "input",
                 action: "dragenter->drag-drop#highlight dragover->drag-drop#highlight dragleave->drag-drop#unhighlight drop->drag-drop#unhighlight change->drag-drop#change"

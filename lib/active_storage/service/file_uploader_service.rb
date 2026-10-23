@@ -18,7 +18,7 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
     file_name = synthetic_filename(key, ActiveStorage::Blob.find_by(key: key)&.content_type)
 
     response = request("get",
-                        path_with_filename(key),
+                        "/files/#{user_id_from_key(key)}/#{file_name}",
                         { query: { token: jwt_token(user_id_from_key(key), "download", file_name) } })
     block_given? ? yield(response.body) : response.body
   end
@@ -36,15 +36,22 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   # from inside the container, not from the end user's browser following the redirect.
   def url(key, content_type: nil, **options)
     file_name = synthetic_filename(key, content_type)
-    "#{public_base_uri}/files/#{key}/#{file_name}?token=#{jwt_token(user_id_from_key(key), "download", file_name)}"
+    "#{public_base_uri}/files/#{user_id_from_key(key)}/#{file_name}?token=#{jwt_token(user_id_from_key(key), "download", file_name)}"
   end
 
   def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, **)
-    request(:get, "/upload_url/#{user_id_from_key(key)}")
+    puts "Old school debug"
+    puts key
+    puts user_id_from_key(key)
+    response = bearer_request(:get, "/upload_url/#{user_id_from_key(key)}")
+    puts "pinga"
+    puts response.body
+
+    "#{public_base_uri}#{handle_response(response).body}"
   end
 
   def headers_for_direct_upload(key, content_type:, **)
-    {}
+    { "Content-Type": "multipart/form-data" }
   end
 
   private
@@ -63,7 +70,7 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
 
   def path_with_filename(key)
     content_type = ActiveStorage::Blob.find_by(key: key)&.content_type
-    "/files/#{key}/#{synthetic_filename(key, content_type)}"
+    "/files/#{user_id_from_key(key)}/#{synthetic_filename(key, content_type)}"
   end
 
   def synthetic_filename(key, content_type)
