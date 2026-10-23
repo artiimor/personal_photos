@@ -1,9 +1,11 @@
 Rails.application.routes.draw do
   get "home/index"
   devise_for :users
-  resources :photos, only: [:index, :new, :create]
+  resources :photos, only: [ :index, :new, :create ]
+
+  get "styleguide" => "styleguide#index" if Rails.env.development?
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-  root "home#index"
+  root "photos#index"
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.

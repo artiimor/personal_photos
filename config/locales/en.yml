@@ -37,6 +37,7 @@ en:
     index:
       title: "Your photos"
       empty: "No photos have been uploaded yet."
+      upload: "Upload photo"
     new:
       title: "Upload photo"
       submit: "Upload"
