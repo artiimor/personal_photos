@@ -51,7 +51,7 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   end
 
   def headers_for_direct_upload(key, content_type:, **)
-    { "Content-Type": "multipart/form-data" }
+    { "Content-Type": content_type }
   end
 
   private
