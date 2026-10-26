@@ -30,7 +30,7 @@ RSpec.describe "Photos", type: :request do
         before { allow_any_instance_of(ActiveStorage::Service::FileUploaderService).to receive(:upload) }
 
         let!(:photo) do
-          Photo.create!(name: "beach", path: "/photos/beach.jpg", file_type: "jpg", user: user).tap do |photo|
+          Photo.create!(name: "beach", user: user).tap do |photo|
             photo.image.attach(fixture_file_upload("test_photo.jpg", "image/jpeg"))
           end
         end

@@ -4,14 +4,13 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   base_uri ENV.fetch("FILE_UPLOADER_URL")
 
   def upload(key, io, checksum: nil, content_type: nil, **)
-    # Check this. Its used for the thumb service and the name is so weird
-    owner_id = user_id_from_key(key)
+    user_id = user_id_from_key(key)
     file_name = synthetic_filename(key, content_type)
     io.define_singleton_method(:original_filename) { file_name }
 
     request("put",
-            "/files/#{owner_id}/#{file_name}",
-            { query: { token: jwt_token(owner_id, "upload", file_name) },
+            "/files/#{user_id}/#{file_name}",
+            { query: { token: jwt_token(user_id, "upload", file_name) },
               body: { file: io } })
   end
 
@@ -24,7 +23,7 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
     block_given? ? yield(response.body) : response.body
   end
 
-  # TODO it downloads the entire file. Implement headers Range en el servidor de rails para no descargarlo todo...  
+  # TODO it downloads the entire file. Implement headers Range en el servidor de rails para no descargarlo todo...
   def download_chunk(key, range)
     download(key).byteslice(range)
   end
@@ -46,14 +45,10 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   end
 
   def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, **)
-    puts "Old school debug"
-    puts key
     user_id = user_id_from_key(key)
     file_id = synthetic_filename(key, content_type)
 
     response = bearer_request(:get, "/upload_url/#{user_id}/#{file_id}")
-    puts "pinga"
-    puts response.body
 
     "#{public_base_uri}#{handle_response(response).body}"
   end
