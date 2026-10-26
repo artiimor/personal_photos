@@ -1,4 +1,5 @@
 class CustomDirectUploadsController < ActiveStorage::DirectUploadsController
+  before_action :authenticate_user!
   def create
     custom_key = generate_custom_key(params[:blob])
 

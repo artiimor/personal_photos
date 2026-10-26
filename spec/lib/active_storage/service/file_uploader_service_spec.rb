@@ -35,13 +35,13 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
   end
 
   describe "#upload" do
-    it "PUTs to the owner's single-segment path with an upload-scoped token" do
+    it "PUTs to the user-scoped synthetic filename path with an upload-scoped token" do
       allow(described_class).to receive(:put).and_return(success_response)
 
-      service.upload(key, StringIO.new("data"))
+      service.upload(key, StringIO.new("data"), content_type: "image/jpeg")
 
       expect(described_class).to have_received(:put) do |path, options|
-        expect(path).to eq("/files/#{owner_id}")
+        expect(path).to eq("/files/#{owner_id}/#{synthetic_filename}")
         expect(decoded_claims(options[:query][:token])).to include(
           "sub" => owner_id, "scope" => "upload"
         )
@@ -54,16 +54,26 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
 
       expect(service.upload(key, StringIO.new("data"))).to eq(success_response)
     end
+
+    it "signs the upload token for the same user_id used in the path (regression: owner_id/user_id rename)" do
+      allow(described_class).to receive(:put).and_return(success_response)
+
+      service.upload(key, StringIO.new("data"))
+
+      expect(described_class).to have_received(:put) do |_path, options|
+        expect(decoded_claims(options[:query][:token])["sub"]).to eq(owner_id)
+      end
+    end
   end
 
   describe "#download" do
-    it "GETs the full key path with a download-scoped token" do
+    it "GETs the user-scoped synthetic filename path with a download-scoped token" do
       allow(described_class).to receive(:get).and_return(success_response)
 
       service.download(key)
 
       expect(described_class).to have_received(:get) do |path, options|
-        expect(path).to eq("/files/#{key}/#{synthetic_filename}")
+        expect(path).to eq("/files/#{owner_id}/#{synthetic_filename}")
         expect(decoded_claims(options[:query][:token])).to include(
           "sub" => owner_id, "scope" => "download"
         )
@@ -87,13 +97,13 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
   end
 
   describe "#delete" do
-    it "DELETEs the full key path with the bearer API token (no JWT)" do
+    it "DELETEs the user-scoped synthetic filename path with the bearer API token (no JWT)" do
       allow(described_class).to receive(:delete).and_return(success_response)
 
       service.delete(key)
 
       expect(described_class).to have_received(:delete).with(
-        "/files/#{key}/#{synthetic_filename}",
+        "/files/#{owner_id}/#{synthetic_filename}",
         hash_including(headers: { "Authorization" => "Bearer #{ENV.fetch('FILE_UPLOADER_API_TOKEN')}" })
       )
     end
@@ -106,7 +116,7 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
   end
 
   describe "#url_for_direct_upload" do
-    it "GETs the owner's single-segment upload_url path" do
+    it "GETs the owner's upload_url path for the synthesized filename, with the bearer token" do
       allow(described_class).to receive(:get).and_return(success_response)
 
       service.url_for_direct_upload(
@@ -114,10 +124,13 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
         content_length: 10, checksum: "x"
       )
 
-      expect(described_class).to have_received(:get).with("/upload_url/#{owner_id}", {})
+      expect(described_class).to have_received(:get).with(
+        "/upload_url/#{owner_id}/abc123.png",
+        { headers: { "Authorization" => "Bearer #{ENV.fetch('FILE_UPLOADER_API_TOKEN')}" } }
+      )
     end
 
-    it "returns the server's response on success" do
+    it "returns the public base uri joined with the server's response body" do
       allow(described_class).to receive(:get).and_return(success_response)
 
       result = service.url_for_direct_upload(
@@ -125,7 +138,7 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
         content_length: 10, checksum: "x"
       )
 
-      expect(result).to eq(success_response)
+      expect(result).to eq("#{service.send(:public_base_uri)}#{success_response.body}")
     end
   end
 
