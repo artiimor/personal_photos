@@ -10,24 +10,13 @@ class PhotosController < ApplicationController
   end
 
   def create
-    uploaded_file = photo_params[:file]
-    key = "#{current_user.uid}/#{SecureRandom.uuid}"
+    @photo = current_user.photos.new
+    @photo.image.attach(photo_params[:file])
 
-    @photo = current_user.photos.new(
-      name: uploaded_file.original_filename,
-      path: key,
-      file_type: uploaded_file.content_type
-    )
+    blob = @photo.image.blob
+    @photo.name = blob.filename.to_s
 
-    ActiveRecord::Base.transaction do
-      @photo.save!
-      @photo.image.attach(
-        key: key,
-        io: uploaded_file.open,
-        filename: uploaded_file.original_filename,
-        content_type: uploaded_file.content_type
-      )
-    end
+    @photo.save!
 
     redirect_to photos_path, notice: t("photos.create.success")
   rescue ActiveRecord::RecordInvalid

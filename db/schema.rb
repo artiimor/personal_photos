@@ -45,10 +45,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_22_064524) do
 
   create_table "photos", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.string "file_type"
     t.json "metadata"
     t.string "name"
-    t.string "path"
     t.datetime "updated_at", null: false
     t.uuid "user_id", null: false
     t.index ["user_id"], name: "index_photos_on_user_id"
