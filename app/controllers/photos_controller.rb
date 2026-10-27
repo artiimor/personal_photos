@@ -10,8 +10,12 @@ class PhotosController < ApplicationController
   end
 
   def create
+    # Make sure we only accept upload in the browser
+    file = photo_params[:file]
+    return head :unprocessable_entity unless file.is_a?(String)
+
     @photo = current_user.photos.new
-    @photo.image.attach(photo_params[:file])
+    @photo.image.attach(file)
 
     blob = @photo.image.blob
     @photo.name = blob.filename.to_s

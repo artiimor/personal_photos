@@ -1,5 +1,7 @@
 require 'rails_helper'
 
+RSpec::Matchers.define_negated_matcher :not_change, :change
+
 RSpec.describe "Photos", type: :request do
   let(:user) { User.create!(email: "user@example.com", password: "password123") }
 
@@ -97,55 +99,14 @@ RSpec.describe "Photos", type: :request do
     context "with a multipart file" do
       let(:file) { fixture_file_upload("test_photo.jpg", "image/jpeg") }
 
-      context "when the upload succeeds" do
-        before do
-          allow_any_instance_of(ActiveStorage::Service::FileUploaderService).to receive(:upload)
-        end
+      it "rejects it without creating a photo, a blob or uploading anything" do
+        expect_any_instance_of(ActiveStorage::Service::FileUploaderService).not_to receive(:upload)
 
-        it "saves the photo for the current user and redirects to the index" do
-          expect {
-            post photos_path, params: { photo: { file: file } }
-          }.to change { user.photos.count }.by(1)
-
-          expect(response).to redirect_to(photos_path)
-        end
-
-        it "uploads the file under a key scoped to the user" do
-          expect_any_instance_of(ActiveStorage::Service::FileUploaderService)
-            .to receive(:upload)
-            .with(a_string_starting_with("#{user.uid}/"), an_instance_of(File), hash_including(content_type: "image/jpeg"))
-
+        expect {
           post photos_path, params: { photo: { file: file } }
-        end
-      end
+        }.to not_change { user.photos.count }.and not_change { ActiveStorage::Blob.count }
 
-      context "when the photo fails to save" do
-        it "never calls the upload service and does not redirect" do
-          allow_any_instance_of(Photo).to receive(:save!).and_raise(ActiveRecord::RecordInvalid.new(Photo.new))
-
-          service = instance_double(ActiveStorage::Service::FileUploaderService)
-          allow(ActiveStorage::Service::FileUploaderService).to receive(:new).and_return(service)
-          expect(service).not_to receive(:upload)
-
-          post photos_path, params: { photo: { file: file } }
-
-          expect(response).to have_http_status(:unprocessable_entity)
-        end
-      end
-
-      context "when the upload fails" do
-        before do
-          allow_any_instance_of(ActiveStorage::Service::FileUploaderService)
-            .to receive(:upload).and_raise(ActiveStorage::FileNotFoundError)
-        end
-
-        it "rolls back the photo (transaction) and re-renders the form" do
-          expect {
-            post photos_path, params: { photo: { file: file } }
-          }.not_to change { user.photos.count }
-
-          expect(response).to have_http_status(:unprocessable_entity)
-        end
+        expect(response).to have_http_status(:unprocessable_entity)
       end
     end
   end
