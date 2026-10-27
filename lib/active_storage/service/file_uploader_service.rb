@@ -46,11 +46,9 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
 
   def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, **)
     user_id = user_id_from_key(key)
-    file_id = synthetic_filename(key)
+    file_name = synthetic_filename(key)
 
-    response = bearer_request(:get, "/upload_url/#{user_id}/#{file_id}")
-
-    "#{public_base_uri}#{handle_response(response).body}"
+    "#{public_base_uri}/#{user_id}/#{file_name}?token=#{jwt_token(user_id, "upload", file_name)}"
   end
 
   def headers_for_direct_upload(key, content_type:, **)

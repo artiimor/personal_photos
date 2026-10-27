@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe ActiveStorage::Service::FileUploaderService do
+  include ActiveSupport::Testing::TimeHelpers
+
   subject(:service) { described_class.new }
 
   let(:owner_id) { "42" }
@@ -116,29 +118,30 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
   end
 
   describe "#url_for_direct_upload" do
+    let(:uri) { ENV["FILE_UPLOADER_PUBLIC_URL"] || ENV["FILE_UPLOADER_URL"] }
+    let(:secret) { ENV.fetch("FILE_UPLOADER_JWT_TOKEN") }
+    let(:jwt_claims) {
+      {
+        sub: owner_id,
+        exp: (Time.now + 5 * 60).to_i,
+        scope: "upload",
+        file_name: synthetic_filename
+      }
+    }
+    let(:token) { JWT.encode(jwt_claims, secret, "HS256") }
+    let(:correct_upload_url) { "#{uri}/#{key}?token=#{token}" }
+
+    before {
+      freeze_time
+    }
+
     it "GETs the owner's upload_url path for the synthesized filename, with the bearer token" do
-      allow(described_class).to receive(:get).and_return(success_response)
-
-      service.url_for_direct_upload(
+      url = service.url_for_direct_upload(
         key, expires_in: 5.minutes, content_type: "image/png",
         content_length: 10, checksum: "x"
       )
 
-      expect(described_class).to have_received(:get).with(
-        "/upload_url/#{owner_id}/#{synthetic_filename}",
-        { headers: { "Authorization" => "Bearer #{ENV.fetch('FILE_UPLOADER_API_TOKEN')}" } }
-      )
-    end
-
-    it "returns the public base uri joined with the server's response body" do
-      allow(described_class).to receive(:get).and_return(success_response)
-
-      result = service.url_for_direct_upload(
-        key, expires_in: 5.minutes, content_type: "image/png",
-        content_length: 10, checksum: "x"
-      )
-
-      expect(result).to eq("#{service.send(:public_base_uri)}#{success_response.body}")
+      expect(url).to eq(correct_upload_url)
     end
   end
 
