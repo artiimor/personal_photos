@@ -1,7 +1,9 @@
 Rails.application.routes.draw do
   get "home/index"
   devise_for :users
-  resources :photos, only: [ :index, :new, :create ]
+  resources :photos, only: [ :index, :new, :create ] do
+    get :thumb, on: :member
+  end
 
   get "styleguide" => "styleguide#index" if Rails.env.development?
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

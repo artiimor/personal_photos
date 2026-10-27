@@ -32,6 +32,11 @@ class PhotosController < ApplicationController
     render :new, status: :unprocessable_entity
   end
 
+  def thumb
+    photo = current_user.photos.find(params[:id])
+    redirect_to photo.image.variant(:thumb).processed.url, allow_other_host: true
+  end
+
   private
 
   def photo_params
