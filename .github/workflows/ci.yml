@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   scan_ruby:
@@ -65,3 +65,42 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd="pg_isready" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    env:
+      RAILS_ENV: test
+      CI: true
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/personal_photos_test
+      FILE_UPLOADER_URL: http://localhost:3050
+      FILE_UPLOADER_PUBLIC_URL: http://localhost:3050
+      FILE_UPLOADER_API_TOKEN: ci-dummy
+      FILE_UPLOADER_JWT_TOKEN: ci-dummy
+
+    steps:
+      - name: Install packages
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y libvips libpq-dev
+
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Prepare database
+        run: bin/rails db:prepare
+
+      - name: Run tests
+        run: bundle exec rspec
