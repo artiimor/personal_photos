@@ -14,6 +14,7 @@ class CustomDirectUploadsController < ActiveStorage::DirectUploadsController
   private
 
   def generate_custom_key(blob_params)
-    "#{current_user.id}/#{SecureRandom.uuid}"
+    ext = Marcel::Magic.new(blob_params[:content_type]).extensions.first || "bin"
+    "#{current_user.id}/#{SecureRandom.uuid}.#{ext}"
   end
 end

@@ -4,10 +4,10 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
   subject(:service) { described_class.new }
 
   let(:owner_id) { "42" }
-  let(:key) { "#{owner_id}/abc123" }
+  let(:key) { "#{owner_id}/abc123.jpg" }
   let(:secret) { ENV.fetch("FILE_UPLOADER_JWT_TOKEN") }
   let!(:blob) { ActiveStorage::Blob.create!(key: key, filename: "photo.jpg", content_type: "image/jpeg", byte_size: 0, checksum: "d41d8cd98f00b204e9800998ecf8427e") }
-  let(:synthetic_filename) { "abc123.jpeg" }
+  let(:synthetic_filename) { "abc123.jpg" }
 
   def decoded_claims(token)
     JWT.decode(token, secret, true, algorithm: "HS256").first
@@ -125,7 +125,7 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
       )
 
       expect(described_class).to have_received(:get).with(
-        "/upload_url/#{owner_id}/abc123.png",
+        "/upload_url/#{owner_id}/#{synthetic_filename}",
         { headers: { "Authorization" => "Bearer #{ENV.fetch('FILE_UPLOADER_API_TOKEN')}" } }
       )
     end
