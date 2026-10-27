@@ -5,7 +5,7 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
 
   def upload(key, io, checksum: nil, content_type: nil, **)
     user_id = user_id_from_key(key)
-    file_name = synthetic_filename(key, content_type)
+    file_name = synthetic_filename(key)
     io.define_singleton_method(:original_filename) { file_name }
 
     request("put",
@@ -15,7 +15,7 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   end
 
   def download(key, &block)
-    file_name = synthetic_filename(key, ActiveStorage::Blob.find_by(key: key)&.content_type)
+    file_name = synthetic_filename(key)
 
     response = request("get",
                         "/files/#{user_id_from_key(key)}/#{file_name}",
@@ -40,13 +40,13 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   # (e.g. host.docker.internal inside the app container), but that host is only resolvable
   # from inside the container, not from the end user's browser following the redirect.
   def url(key, content_type: nil, **options)
-    file_name = synthetic_filename(key, content_type)
+    file_name = synthetic_filename(key)
     "#{public_base_uri}/files/#{user_id_from_key(key)}/#{file_name}?token=#{jwt_token(user_id_from_key(key), "download", file_name)}"
   end
 
   def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, **)
     user_id = user_id_from_key(key)
-    file_id = synthetic_filename(key, content_type)
+    file_id = synthetic_filename(key)
 
     response = bearer_request(:get, "/upload_url/#{user_id}/#{file_id}")
 
@@ -72,14 +72,11 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   end
 
   def path_with_filename(key)
-    content_type = ActiveStorage::Blob.find_by(key: key)&.content_type
-    "/files/#{user_id_from_key(key)}/#{synthetic_filename(key, content_type)}"
+    "/files/#{user_id_from_key(key)}/#{synthetic_filename(key)}"
   end
 
-  def synthetic_filename(key, content_type)
-    basename = key.to_s.split("/").last
-    ext = content_type.to_s.split("/").last.presence || "bin"
-    "#{basename}.#{ext}"
+  def synthetic_filename(key)
+    key.to_s.split("/").last
   end
 
   def jwt_token(user_id, scope, file_name)
