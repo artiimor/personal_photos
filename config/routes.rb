@@ -5,6 +5,8 @@ Rails.application.routes.draw do
     get :thumb, on: :member
   end
 
+  post "/rails/active_storage/direct_uploads", to: "custom_direct_uploads#create", as: :rails_direct_uploads
+
   get "styleguide" => "styleguide#index" if Rails.env.development?
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
   root "photos#index"
