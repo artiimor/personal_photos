@@ -110,4 +110,38 @@ RSpec.describe "Photos", type: :request do
       end
     end
   end
+
+  describe "#thumb" do
+    let(:other_user) { User.create!(email: "other@example.com", password: "password123") }
+    let(:photo) do
+      Photo.create!(name: "beach", user: user).tap do |photo|
+        photo.image.attach(fixture_file_upload("test_photo.jpg", "image/jpeg"))
+      end
+    end
+
+    before do
+      allow_any_instance_of(ActiveStorage::Service::FileUploaderService).to receive(:upload)
+      allow_any_instance_of(ActiveStorage::VariantWithRecord)
+        .to receive(:processed).and_return(double(url: "http://files.example.com/thumb.webp"))
+    end
+
+    it "redirects to sign in when not signed in" do
+      get thumb_photo_path(photo)
+      expect(response).to redirect_to(new_user_session_path)
+    end
+
+    it "redirects the owner to the file server thumbnail" do
+      sign_in user
+      get thumb_photo_path(photo)
+      expect(response).to redirect_to("http://files.example.com/thumb.webp")
+    end
+
+    it "returns 404 for another user's photo without touching the file" do
+      expect_any_instance_of(ActiveStorage::VariantWithRecord).not_to receive(:processed)
+
+      sign_in other_user
+      get thumb_photo_path(photo)
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end
