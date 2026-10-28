@@ -7,7 +7,7 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
 
   let(:owner_id) { "42" }
   let(:key) { "#{owner_id}/abc123.jpg" }
-  let(:secret) { ENV.fetch("FILE_UPLOADER_JWT_TOKEN") }
+  let(:secret) { ENV.fetch("FILE_UPLOADER_JWT_SECRET") }
   let!(:blob) { ActiveStorage::Blob.create!(key: key, filename: "photo.jpg", content_type: "image/jpeg", byte_size: 0, checksum: "d41d8cd98f00b204e9800998ecf8427e") }
   let(:synthetic_filename) { "abc123.jpg" }
 

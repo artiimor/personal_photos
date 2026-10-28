@@ -12,6 +12,8 @@ class PhotosController < ApplicationController
   def create
     # Make sure we only accept upload in the browser
     file = photo_params[:file]
+    puts "ASDASDSAD"
+    puts file
     return head :unprocessable_entity unless file.is_a?(String)
 
     @photo = current_user.photos.new

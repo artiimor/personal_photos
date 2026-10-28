@@ -78,7 +78,7 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   end
 
   def jwt_token(user_id, scope, file_name)
-    secret = ENV.fetch("FILE_UPLOADER_JWT_TOKEN")
+    secret = ENV.fetch("FILE_UPLOADER_JWT_SECRET")
     JWT.encode(jwt_claims(user_id, scope, file_name), secret, "HS256")
   end
 
