@@ -94,6 +94,21 @@ RSpec.describe "Photos", type: :request do
 
         expect(user.photos.last.image.blob).to eq(blob)
       end
+
+      context "when the file uploader fails" do
+        [ ActiveStorage::Error, Errno::ECONNREFUSED ].each do |failure|
+          it "renders the form with 422 and saves no photo (#{failure})" do
+            allow_any_instance_of(ActiveStorage::Service::FileUploaderService)
+              .to receive(:download).and_raise(failure)
+
+            expect {
+              post photos_path, params: { photo: { file: blob.signed_id } }
+            }.not_to change { user.photos.count }
+
+            expect(response).to have_http_status(:unprocessable_entity)
+          end
+        end
+      end
     end
 
     context "with a multipart file" do

@@ -99,15 +99,17 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
   end
 
   describe "#delete" do
-    it "DELETEs the user-scoped synthetic filename path with the bearer API token (no JWT)" do
+    it "DELETEs the user-scoped synthetic filename path with a delete-scoped token" do
       allow(described_class).to receive(:delete).and_return(success_response)
 
       service.delete(key)
 
-      expect(described_class).to have_received(:delete).with(
-        "/files/#{owner_id}/#{synthetic_filename}",
-        hash_including(headers: { "Authorization" => "Bearer #{ENV.fetch('FILE_UPLOADER_API_TOKEN')}" })
-      )
+      expect(described_class).to have_received(:delete) do |path, options|
+        expect(path).to eq("/files/#{owner_id}/#{synthetic_filename}")
+        expect(decoded_claims(options[:query][:token])).to include(
+          "sub" => owner_id, "scope" => "delete", "file_name" => synthetic_filename
+        )
+      end
     end
 
     it "returns the server's response on success" do
@@ -115,33 +117,52 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
 
       expect(service.delete(key)).to eq(success_response)
     end
+
+    # ActiveStorage expects delete to be idempotent (Disk service ignores ENOENT),
+    # otherwise purging an already-deleted blob blows up.
+    it "does not raise when the file server no longer has the file (404)" do
+      allow(described_class).to receive(:delete).and_return(instance_double(HTTParty::Response, code: 404))
+
+      expect { service.delete(key) }.not_to raise_error
+    end
+  end
+
+  describe "#delete_prefixed" do
+    # Blob#delete calls delete_prefixed("variants/<key>/") for every image.
+    it "does not raise (purging an image must work)" do
+      expect { service.delete_prefixed("variants/#{key}/") }.not_to raise_error
+    end
   end
 
   describe "#url_for_direct_upload" do
     let(:uri) { ENV["FILE_UPLOADER_PUBLIC_URL"] || ENV["FILE_UPLOADER_URL"] }
-    let(:secret) { ENV.fetch("FILE_UPLOADER_JWT_TOKEN") }
-    let(:jwt_claims) {
-      {
-        sub: owner_id,
-        exp: (Time.now + 5 * 60).to_i,
-        scope: "upload",
-        file_name: synthetic_filename
-      }
-    }
-    let(:token) { JWT.encode(jwt_claims, secret, "HS256") }
-    let(:correct_upload_url) { "#{uri}/#{key}?token=#{token}" }
 
-    before {
-      freeze_time
-    }
-
-    it "GETs the owner's upload_url path for the synthesized filename, with the bearer token" do
-      url = service.url_for_direct_upload(
+    def direct_upload_url
+      service.url_for_direct_upload(
         key, expires_in: 5.minutes, content_type: "image/png",
         content_length: 10, checksum: "x"
       )
+    end
 
-      expect(url).to eq(correct_upload_url)
+    it "points to the public file server host" do
+      url = URI.parse(direct_upload_url)
+
+      expect("#{url.scheme}://#{url.host}:#{url.port}").to eq(uri)
+    end
+
+    it "signs an upload-scoped token for that owner and file name" do
+      token = Rack::Utils.parse_query(URI.parse(direct_upload_url).query)["token"]
+
+      expect(decoded_claims(token)).to include(
+        "sub" => owner_id, "scope" => "upload", "file_name" => synthetic_filename
+      )
+    end
+  end
+
+  describe "#headers_for_direct_upload" do
+    it "sends the blob's content type" do
+      expect(service.headers_for_direct_upload(key, content_type: "image/png"))
+        .to eq("Content-Type": "image/png")
     end
   end
 
@@ -182,6 +203,17 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
 
       expect { service.upload(key, StringIO.new("data")) }
         .to raise_error(ActiveStorage::Error)
+    end
+
+    # File server down: HTTParty raises raw network errors, which callers
+    # (PhotosController rescues ActiveStorage::Error) won't catch → 500.
+    [ Errno::ECONNREFUSED, Net::OpenTimeout, SocketError ].each do |network_error|
+      it "raises ActiveStorage::Error when the file server is unreachable (#{network_error})" do
+        allow(described_class).to receive(:put).and_raise(network_error)
+
+        expect { service.upload(key, StringIO.new("data")) }
+          .to raise_error(ActiveStorage::Error)
+      end
     end
   end
 end

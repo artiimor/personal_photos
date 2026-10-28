@@ -33,7 +33,11 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   end
 
   def delete(key)
-    bearer_request("delete", path_with_filename(key))
+    file_name = synthetic_filename(key)
+
+    request("delete",
+            "/files/#{user_id_from_key(key)}/#{file_name}",
+            { query: { token: jwt_token(user_id_from_key(key), "delete", file_name) } })
   end
 
   # Browser-facing URL: the Rails server reaches the file-uploader via FILE_UPLOADER_URL
@@ -56,10 +60,6 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   end
 
   private
-
-  def auth_headers
-    { "Authorization" => "Bearer #{ENV.fetch('FILE_UPLOADER_API_TOKEN')}" }
-  end
 
   def user_id_from_key(key)
     key.split("/", 2).first
@@ -89,11 +89,6 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
       scope: scope,
       file_name: file_name
     }
-  end
-
-  def bearer_request(method, path, options = {})
-    response = self.class.send(method, path, options.merge(headers: auth_headers))
-    handle_response(response)
   end
 
   def request(method, path, options = {})
