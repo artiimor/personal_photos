@@ -85,7 +85,7 @@ jobs:
       FILE_UPLOADER_URL: http://localhost:3050
       FILE_UPLOADER_PUBLIC_URL: http://localhost:3050
       FILE_UPLOADER_API_TOKEN: ci-dummy
-      FILE_UPLOADER_JWT_TOKEN: ci-dummy
+      FILE_UPLOADER_JWT_SECRET: ci-dummy
 
     steps:
       - name: Install packages

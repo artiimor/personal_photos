@@ -130,7 +130,12 @@ RSpec.describe "Photos", type: :request do
     let(:other_user) { User.create!(email: "other@example.com", password: "password123") }
     let(:photo) do
       Photo.create!(name: "beach", user: user).tap do |photo|
-        photo.image.attach(fixture_file_upload("test_photo.jpg", "image/jpeg"))
+        photo.image.attach(
+          key: "#{user.id}/#{SecureRandom.uuid}.jpg",
+          io: file_fixture("test_photo.jpg").open,
+          filename: "test_photo.jpg",
+          content_type: "image/jpeg"
+        )
       end
     end
 

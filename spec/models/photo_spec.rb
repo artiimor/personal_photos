@@ -5,12 +5,19 @@ RSpec.describe Photo, type: :model do
     it { should validate_presence_of(:name) }
 
     describe "image format" do
-      let(:photo) { Photo.new(name: "beach", user: User.new) }
+      let(:user) { User.create!(email: "user@example.com", password: "password123") }
+      let(:photo) { Photo.new(name: "beach", user: user) }
 
       # Active Storage sniffs the real content type from the bytes (Marcel), so
-      # the declared content_type only wins when the bytes are not recognizable
+      # the declared content_type only wins when the bytes are not recognizable.
+      # The key is scoped to the owner so only the format validation is exercised
       def attach(bytes, filename:, content_type:)
-        photo.image.attach(io: StringIO.new(bytes), filename: filename, content_type: content_type)
+        photo.image.attach(
+          key: "#{user.id}/#{SecureRandom.uuid}",
+          io: StringIO.new(bytes),
+          filename: filename,
+          content_type: content_type
+        )
       end
 
       it "is valid without an image" do
