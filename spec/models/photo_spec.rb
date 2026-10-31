@@ -3,6 +3,55 @@ require 'rails_helper'
 RSpec.describe Photo, type: :model do
   describe "validations" do
     it { should validate_presence_of(:name) }
+
+    describe "image format" do
+      let(:photo) { Photo.new(name: "beach", user: User.new) }
+
+      # Active Storage sniffs the real content type from the bytes (Marcel), so
+      # the declared content_type only wins when the bytes are not recognizable
+      def attach(bytes, filename:, content_type:)
+        photo.image.attach(io: StringIO.new(bytes), filename: filename, content_type: content_type)
+      end
+
+      it "is valid without an image" do
+        expect(photo).to be_valid
+      end
+
+      {
+        "jpeg" => [ Vips::Image.black(1, 1).jpegsave_buffer, "photo.jpg", "image/jpeg" ],
+        "png" => [ Vips::Image.black(1, 1).pngsave_buffer, "photo.png", "image/png" ],
+        "webp" => [ Vips::Image.black(1, 1).webpsave_buffer, "photo.webp", "image/webp" ],
+        "heic" => [ "fake heic bytes", "photo.heic", "image/heic" ],
+        "heif" => [ "fake heif bytes", "photo.heif", "image/heif" ]
+      }.each do |format, (bytes, filename, content_type)|
+        it "accepts #{format} images" do
+          attach(bytes, filename: filename, content_type: content_type)
+
+          expect(photo).to be_valid
+        end
+      end
+
+      it "rejects files that are not images" do
+        attach("just some text", filename: "notes.txt", content_type: "text/plain")
+
+        expect(photo).not_to be_valid
+        expect(photo.errors.of_kind?(:image, :invalid_type)).to be true
+      end
+
+      it "rejects image types outside the allowed list" do
+        attach("GIF89a", filename: "anim.gif", content_type: "image/gif")
+
+        expect(photo).not_to be_valid
+        expect(photo.errors.of_kind?(:image, :invalid_type)).to be true
+      end
+
+      it "rejects a non-image disguised with an image extension and content type" do
+        attach("%PDF-1.4\n", filename: "photo.jpg", content_type: "image/jpeg")
+
+        expect(photo).not_to be_valid
+        expect(photo.errors.of_kind?(:image, :invalid_type)).to be true
+      end
+    end
   end
 
   describe "associations" do
