@@ -1,8 +1,10 @@
 # Personal Photos
 
-A Rails app for storing personal photos. Each user signs up (Devise), uploads their photos from the browser and browses their gallery with thumbnails.
+![Gallery](docs/gallery.png)
 
-Photos are **not stored in this project**: they live in [file-uploader](../file-uploader), a file server written in Rust (Axum). Rails only keeps the metadata in Postgres (the photo, its owner and the Active Storage blob).
+A Rails app for storing personal photos. Each user logs in (Devise), uploads their photos from the browser and browses their gallery with thumbnails. There is no public sign-up: users are created from the console (see [Creating a user](#creating-a-user)).
+
+Photos are **not stored in this project**: they live in [file-uploader](https://github.com/artiimor/file-uploader), a file server written in Rust (Axum). Rails only keeps the metadata in Postgres (the photo, its owner and the Active Storage blob).
 
 ## How it talks to file-uploader
 
@@ -64,11 +66,27 @@ The integration is a custom Active Storage service, `ActiveStorage::Service::Fil
 
    The code is mounted as a volume, so changes show up without rebuilding the image. `--build` is only needed when the `Gemfile` changes.
 
-4. Open http://localhost:3000, sign up and upload a photo.
+4. Create a user (see below), open http://localhost:3000, log in and upload a photo.
+
+## Creating a user
+
+Sign-up is disabled, so users are created with `bin/rails runner` inside the `web` container:
+
+```sh
+docker compose exec web bin/rails runner 'User.create!(email: "you@example.com", password: "a-long-password")'
+```
 
 ## Tests
 
-The tests use RSpec and stub the calls to file-uploader, so it does not need to be running:
+The tests use RSpec and stub the calls to file-uploader, so it does not need to be running.
+
+Create `.env.test` from the example. It keeps the same `POSTGRES_*` values as `.env` and points `DATABASE_URL` and `REDIS_URL` to a separate test database (`personal_photos_test`) and Redis DB, so the tests never touch your development data:
+
+```sh
+cp .env.test.example .env.test
+```
+
+Then run:
 
 ```sh
 docker compose --env-file .env.test run --rm -e RAILS_ENV=test web \
@@ -76,3 +94,7 @@ docker compose --env-file .env.test run --rm -e RAILS_ENV=test web \
 ```
 
 `--env-file .env.test` only fills in the `${...}` variables in `docker-compose.yml` (`DATABASE_URL`, `REDIS_URL`), so the tests use the test database. The rest of the container's variables, such as `FILE_UPLOADER_JWT_SECRET`, still come from `.env`.
+
+## License
+
+[MIT](LICENSE)
