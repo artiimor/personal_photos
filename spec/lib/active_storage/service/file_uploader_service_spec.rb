@@ -167,8 +167,36 @@ RSpec.describe ActiveStorage::Service::FileUploaderService do
   end
 
   describe "#exist?" do
-    it "returns true" do
+    it "GETs the metadata path with a metadata-scoped token" do
+      allow(described_class).to receive(:get).and_return(success_response)
+
+      service.exist?(key)
+
+      expect(described_class).to have_received(:get) do |path, options|
+        expect(path).to eq("/files/#{owner_id}/#{synthetic_filename}/metadata")
+        expect(decoded_claims(options[:query][:token])).to include(
+          "sub" => owner_id, "scope" => "metadata", "file_name" => synthetic_filename
+        )
+      end
+    end
+
+    it "returns true when the file server has the file" do
+      allow(described_class).to receive(:get).and_return(success_response)
+
       expect(service.exist?(key)).to eq(true)
+    end
+
+    it "returns false when the file server does not have the file (404)" do
+      allow(described_class).to receive(:get).and_return(instance_double(HTTParty::Response, code: 404))
+
+      expect(service.exist?(key)).to eq(false)
+    end
+
+    # A rejected token or a server failure says nothing about the file existing.
+    it "raises on other errors instead of returning false" do
+      allow(described_class).to receive(:get).and_return(instance_double(HTTParty::Response, code: 500))
+
+      expect { service.exist?(key) }.to raise_error(ActiveStorage::Error)
     end
   end
 

@@ -16,10 +16,11 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
 
   def download(key, &block)
     file_name = synthetic_filename(key)
+    user_id = user_id_from_key(key)
 
     response = request("get",
-                        "/files/#{user_id_from_key(key)}/#{file_name}",
-                        { query: { token: jwt_token(user_id_from_key(key), "download", file_name) } })
+                        "/files/#{user_id}/#{file_name}",
+                        { query: { token: jwt_token(user_id, "download", file_name) } })
     block_given? ? yield(response.body) : response.body
   end
 
@@ -29,7 +30,15 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   end
 
   def exist?(key)
-    true # TODO implement method in server first
+    file_name = synthetic_filename(key)
+    user_id = user_id_from_key(key)
+
+    response = request("get",
+                        "/files/#{user_id}/#{file_name}/metadata",
+                        { query: { token: jwt_token(user_id, "metadata", file_name) } })
+    true
+  rescue ActiveStorage::FileNotFoundError
+    false
   end
 
   def delete(key)
@@ -38,6 +47,12 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
     request("delete",
             "/files/#{user_id_from_key(key)}/#{file_name}",
             { query: { token: jwt_token(user_id_from_key(key), "delete", file_name) } })
+  rescue ActiveStorage::FileNotFoundError
+    nil # Already gone: delete must be idempotent, like the Disk service
+  end
+
+  # Variants are not stored on the file server, so there is nothing to delete by prefix
+  def delete_prefixed(prefix)
   end
 
   # Browser-facing URL: the Rails server reaches the file-uploader via FILE_UPLOADER_URL
@@ -94,6 +109,8 @@ class ActiveStorage::Service::FileUploaderService < ActiveStorage::Service
   def request(method, path, options = {})
     response = self.class.send(method, path, options)
     handle_response(response)
+  rescue Errno::ECONNREFUSED, Net::OpenTimeout, SocketError => e
+    raise ActiveStorage::Error, "File server unreachable (#{e.class})"
   end
 
   def handle_response(response)

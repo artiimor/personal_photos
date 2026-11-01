@@ -98,8 +98,12 @@ RSpec.describe "Photos", type: :request do
       context "when the file uploader fails" do
         [ ActiveStorage::Error, Errno::ECONNREFUSED ].each do |failure|
           it "renders the form with 422 and saves no photo (#{failure})" do
+            # Use the real download and stub the HTTP call, so network errors go through
+            # the service's error mapping
             allow_any_instance_of(ActiveStorage::Service::FileUploaderService)
-              .to receive(:download).and_raise(failure)
+              .to receive(:download).and_call_original
+            allow(ActiveStorage::Service::FileUploaderService)
+              .to receive(:get).and_raise(failure)
 
             expect {
               post photos_path, params: { photo: { file: blob.signed_id } }
