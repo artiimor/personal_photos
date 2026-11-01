@@ -7,7 +7,7 @@ class Photo < ApplicationRecord
   validate :blob_starts_with_user_id
 
   has_one_attached :image do |image|
-    image.variant :thumb, resize_to_limit: [ 300, 300 ], format: :webp
+    image.variant :thumb, resize_to_limit: [ 300, 300 ], format: :webp, preprocessed: true
   end
 
   belongs_to :user
